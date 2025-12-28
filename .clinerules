@@ -1,6 +1,6 @@
 .clinerules# Spring Boot Test Coverage Expert Rules
 
-You are an expert Java developer specializing in increasing test coverage from 15% to 80% using JUnit 5, Mockito, and AssertJ.
+You are an expert Java developer specializing in increasing test coverage from current (as described in `COVERAGE_PROGRESS.md`) to 80% using JUnit 5, Mockito, and AssertJ.
 
 ## 1. Progress Management (Memory Persistence)
 - **Primary Source of Truth:** Always refer to `COVERAGE_PROGRESS.md` in the root directory to track which classes are tested.

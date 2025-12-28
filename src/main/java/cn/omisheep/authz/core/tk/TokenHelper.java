@@ -25,6 +25,8 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 import static cn.omisheep.authz.core.config.Constants.*;
 import static io.jsonwebtoken.Jwts.ZIP.GZIP;
@@ -48,7 +50,7 @@ public class TokenHelper extends BaseHelper {
     private static final SignatureAlgorithm alg;
     private static final CompressionAlgorithm   codec = GZIP;
     private static final int                tokenIdBits;
-    private static final String             prefix;
+
 
     private TokenHelper() {
         throw new UnsupportedOperationException();
@@ -72,19 +74,6 @@ public class TokenHelper extends BaseHelper {
             alg       = HS256;
         }
 
-        String    prefix1;
-        var jwsHeaderBuilder = Jwts.header();
-        if (alg != SignatureAlgorithm.NONE) jwsHeaderBuilder.add("alg", alg.getValue());
-        jwsHeaderBuilder.add("zip", codec.getId());
-        try {
-            byte[] bytes = new ObjectMapper().writeValueAsBytes(jwsHeaderBuilder.build());
-            prefix1 = Encoders.BASE64URL.encode(bytes) + ".";
-        } catch (JsonProcessingException e) {
-            LogUtils.error(e);
-            prefix1 = "";
-        }
-
-        prefix      = prefix1;
         cookieName  = properties.getToken().getCookieName();
         accessTime  = TimeUtils.parseTimeValue(token.getAccessTime());
         refreshTime = TimeUtils.parseTimeValue(token.getRefreshTime());
@@ -210,7 +199,7 @@ public class TokenHelper extends BaseHelper {
             jwtBuilder.signWith(secretKey, alg);
         }
         String tokenVal = jwtBuilder.compact();
-        return new AccessToken(id, tokenVal.substring(tokenVal.indexOf(".") + 1), accessTokenId,
+        return new AccessToken(id, tokenVal, accessTokenId,
                                accessTime,
                                expiresAt.getTime(), grantType, clientId, scope, userId, deviceType, deviceId);
     }
@@ -226,7 +215,7 @@ public class TokenHelper extends BaseHelper {
             jwtBuilder.signWith(secretKey, alg);
         }
         String tokenVal = jwtBuilder.compact();
-        return new RefreshToken(accessToken.getId(), tokenVal.substring(tokenVal.indexOf(".") + 1),
+        return new RefreshToken(accessToken.getId(), tokenVal,
                                 refreshTime, expiresAt.getTime(),
                                 accessToken.getUserId(), accessToken.getClientId());
     }
@@ -312,7 +301,7 @@ public class TokenHelper extends BaseHelper {
         if (val == null || val.equals("")) return null;
         JwtParserBuilder jwtParserBuilder = Jwts.parser();
         if (hasKey()) jwtParserBuilder.verifyWith(secretKey);
-        return jwtParserBuilder.build().parseSignedClaims(prefix + val).getPayload();
+        return jwtParserBuilder.build().parseSignedClaims(val).getPayload();
     }
 
     /**

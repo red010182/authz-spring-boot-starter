@@ -208,6 +208,62 @@ class AuthzContextTest {
     }
 
     @Test
+    void testCreateUserIdWithCustomType() throws Exception {
+        // Mock the static fields in AuthzAppVersion
+        cn.omisheep.authz.core.config.AuthzAppVersion.USER_ID_TYPE = Long.class;
+        
+        // Create a mock constructor for Long that takes a String
+        java.lang.reflect.Constructor<Long> mockConstructor = mock(java.lang.reflect.Constructor.class);
+        when(mockConstructor.newInstance("456")).thenReturn(456L);
+        cn.omisheep.authz.core.config.AuthzAppVersion.USER_ID_CONSTRUCTOR = mockConstructor;
+        
+        Object result = AuthzContext.createUserId(456);
+        
+        assertEquals(456L, result);
+        assertTrue(result instanceof Long);
+        verify(mockConstructor).newInstance("456");
+    }
+
+    @Test
+    void testCreateUserIdWithConstructorException() throws Exception {
+        // Mock the static fields in AuthzAppVersion
+        cn.omisheep.authz.core.config.AuthzAppVersion.USER_ID_TYPE = Long.class;
+        
+        // Create a mock constructor that throws an exception
+        java.lang.reflect.Constructor<Long> mockConstructor = mock(java.lang.reflect.Constructor.class);
+        when(mockConstructor.newInstance("789")).thenThrow(new InstantiationException("Test exception"));
+        cn.omisheep.authz.core.config.AuthzAppVersion.USER_ID_CONSTRUCTOR = mockConstructor;
+        
+        Object result = AuthzContext.createUserId(789);
+        
+        // Should return the original input when constructor fails
+        assertEquals(789, result);
+        verify(mockConstructor).newInstance("789");
+    }
+
+    @Test
+    void testCreateUserIdWithNullInput() {
+        // Mock the static fields in AuthzAppVersion
+        cn.omisheep.authz.core.config.AuthzAppVersion.USER_ID_TYPE = String.class;
+        
+        // When userId is null, it should return "null" string
+        Object result = AuthzContext.createUserId(null);
+        
+        assertEquals("null", result);
+        assertTrue(result instanceof String);
+    }
+
+    @Test
+    void testGetMainClassPkg() {
+        // Mock the static field in AuthzAppVersion
+        cn.omisheep.authz.core.config.AuthzAppVersion.mainClass = AuthzContextTest.class;
+        
+        String result = AuthzContext.getMainClassPkg();
+        
+        assertEquals("cn.omisheep.authz.core", result);
+    }
+
+    @Test
     void testCurrentRequestSupplier() {
         HttpUtils.currentRequest.set(mockRequest);
         

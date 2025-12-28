@@ -89,7 +89,7 @@ class AuthzSlotCoreInterceptorTest {
         verify(mockHttpMeta).exportLog();
         verify(mockAuthzExceptionHandler).handle(eq(mockRequest), eq(mockResponse), eq(mockHttpMeta), 
                 eq(ExceptionStatus.REQUIRE_LOGIN), any());
-    }
+    }       
 
     @Test
     void testConstructorWithSlots() {

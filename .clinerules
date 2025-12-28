@@ -19,7 +19,7 @@ You are an expert Java developer. Goal: Increase total project LINE COVERAGE to 
 - **Preserve Existing Tests:** - **DO NOT** modify or delete existing Mockito-based Unit Tests.
     - If a class already has a `*Test.java`, leave it.
 - **New Coverage (IT Mode):** - Create **NEW** integration tests named `[ClassName]IT.java`.
-    - Use `@SpringBootTest` + `@AutoConfigureMockMvc` + **H2 Database**.
+    - Use `@SpringBootTest` + `@AutoConfigureMockMvc` .
     - Aim for the "Happy Path" to trigger as many lines as possible.
 - **Metric:** Focus ONLY on **LINE COVERAGE**. Ignore complex branch logic unless required.
 - **Mocks:** Use `@MockBean` ONLY for external 3rd-party APIs. Use real Beans for internal logic.

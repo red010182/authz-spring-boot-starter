@@ -3,15 +3,15 @@ package cn.omisheep.authz.core.auth.ipf;
 import cn.omisheep.authz.core.AuthzContext;
 import cn.omisheep.authz.core.ExceptionStatus;
 import cn.omisheep.authz.core.util.HttpUtils;
-import cn.omisheep.web.utils.BufferedServletRequestWrapper;
+import org.springframework.web.util.ContentCachingRequestWrapper;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import javax.servlet.FilterChain;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
 import static cn.omisheep.authz.core.config.Constants.*;
@@ -40,7 +40,7 @@ public class AuthzHttpFilter extends OncePerRequestFilter {
         if (StringUtils.startsWithIgnoreCase(rrequest.getContentType(), "multipart/")) {
             request = rrequest;
         } else {
-            request = new BufferedServletRequestWrapper(rrequest);
+            request = new ContentCachingRequestWrapper(rrequest);
         }
 
         String uri         = request.getRequestURI();

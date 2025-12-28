@@ -2,7 +2,7 @@ package cn.omisheep.authz.core.util;
 
 import cn.omisheep.authz.core.config.Constants;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 public class IPUtils {
 

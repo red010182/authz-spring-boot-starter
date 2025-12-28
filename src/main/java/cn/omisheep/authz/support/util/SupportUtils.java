@@ -3,7 +3,7 @@ package cn.omisheep.authz.support.util;
 import cn.omisheep.commons.util.web.JSONUtils;
 import lombok.extern.slf4j.Slf4j;
 
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 

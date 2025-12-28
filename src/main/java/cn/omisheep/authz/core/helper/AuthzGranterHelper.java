@@ -14,7 +14,7 @@ import org.apache.commons.lang.StringUtils;
 import org.springframework.lang.NonNull;
 import org.springframework.lang.Nullable;
 
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 
 public class AuthzGranterHelper extends BaseHelper {
 

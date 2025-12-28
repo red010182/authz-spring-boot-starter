@@ -13,11 +13,13 @@ import cn.omisheep.commons.util.UUIDBits;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.*;
+import io.jsonwebtoken.io.CompressionAlgorithm;
 import io.jsonwebtoken.io.Encoders;
 import io.jsonwebtoken.security.Keys;
+import io.jsonwebtoken.ClaimsBuilder;
 
 import javax.crypto.SecretKey;
-import javax.servlet.http.Cookie;
+import jakarta.servlet.http.Cookie;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -25,7 +27,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.Date;
 
 import static cn.omisheep.authz.core.config.Constants.*;
-import static io.jsonwebtoken.CompressionCodecs.GZIP;
+import static io.jsonwebtoken.Jwts.ZIP.GZIP;
 import static io.jsonwebtoken.SignatureAlgorithm.HS256;
 import static io.jsonwebtoken.SignatureAlgorithm.NONE;
 
@@ -44,7 +46,7 @@ public class TokenHelper extends BaseHelper {
     private static final SecretKey secretKey;
 
     private static final SignatureAlgorithm alg;
-    private static final CompressionCodec   codec = GZIP;
+    private static final CompressionAlgorithm   codec = GZIP;
     private static final int                tokenIdBits;
     private static final String             prefix;
 
@@ -71,11 +73,11 @@ public class TokenHelper extends BaseHelper {
         }
 
         String    prefix1;
-        JwsHeader jwsHeader = Jwts.jwsHeader();
-        if (alg != SignatureAlgorithm.NONE) jwsHeader.setAlgorithm(alg.getValue());
-        jwsHeader.setCompressionAlgorithm(codec.getAlgorithmName());
+        var jwsHeaderBuilder = Jwts.header();
+        if (alg != SignatureAlgorithm.NONE) jwsHeaderBuilder.add("alg", alg.getValue());
+        jwsHeaderBuilder.add("zip", codec.getId());
         try {
-            byte[] bytes = new ObjectMapper().writeValueAsBytes(jwsHeader);
+            byte[] bytes = new ObjectMapper().writeValueAsBytes(jwsHeaderBuilder.build());
             prefix1 = Encoders.BASE64URL.encode(bytes) + ".";
         } catch (JsonProcessingException e) {
             LogUtils.error(e);
@@ -189,21 +191,21 @@ public class TokenHelper extends BaseHelper {
                                                  String clientId,
                                                  String scope,
                                                  GrantType grantType) {
-        Claims claims = Jwts.claims();
-        claims.put(USER_ID, userId);
-        claims.put(ID, id);
+        ClaimsBuilder claims = Jwts.claims();
+        claims.add(USER_ID, userId);
+        claims.add(ID, id);
 
         if (clientId != null) { // oauth
-            if (grantType != null) claims.put(GRANT_TYPE, grantType.getType());
-            if (scope != null) claims.put(SCOPE, scope);
-            claims.put(CLIENT_ID, clientId);
+            if (grantType != null) claims.add(GRANT_TYPE, grantType.getType());
+            if (scope != null) claims.add(SCOPE, scope);
+            claims.add(CLIENT_ID, clientId);
         } else {
-            claims.put(DEVICE_ID, deviceId);
-            claims.put(DEVICE_TYPE, deviceType);
+            claims.add(DEVICE_ID, deviceId);
+            claims.add(DEVICE_TYPE, deviceType);
         }
 
-        JwtBuilder jwtBuilder = Jwts.builder().setClaims(claims) // 设置 claims
-                .setId(accessTokenId).compressWith(codec).setExpiration(expiresAt);
+        JwtBuilder jwtBuilder = Jwts.builder().claims(claims.build()) // 设置 claims
+                .id(accessTokenId).compressWith(codec).expiration(expiresAt);
         if (hasKey()) {
             jwtBuilder.signWith(secretKey, alg);
         }
@@ -215,11 +217,11 @@ public class TokenHelper extends BaseHelper {
 
     private static RefreshToken createRefreshToken(AccessToken accessToken,
                                                    Date expiresAt) {
-        Claims claims = Jwts.claims();
-        claims.put(USER_ID, accessToken.getUserId());
-        claims.put(CLIENT_ID, accessToken.getClientId());
-        JwtBuilder jwtBuilder = Jwts.builder().setClaims(claims) // 设置 claims
-                .setId(accessToken.getId()).setExpiration(expiresAt).compressWith(codec);
+        ClaimsBuilder claims = Jwts.claims();
+        claims.add(USER_ID, accessToken.getUserId());
+        claims.add(CLIENT_ID, accessToken.getClientId());
+        JwtBuilder jwtBuilder = Jwts.builder().claims(claims.build()) // 设置 claims
+                .id(accessToken.getId()).expiration(expiresAt).compressWith(codec);
         if (hasKey()) {
             jwtBuilder.signWith(secretKey, alg);
         }
@@ -308,9 +310,9 @@ public class TokenHelper extends BaseHelper {
 
     private static Claims parseToken(String val) {
         if (val == null || val.equals("")) return null;
-        JwtParserBuilder jwtParserBuilder = Jwts.parserBuilder();
-        if (hasKey()) jwtParserBuilder.setSigningKey(secretKey);
-        return jwtParserBuilder.build().parseClaimsJws(prefix + val).getBody();
+        JwtParserBuilder jwtParserBuilder = Jwts.parser();
+        if (hasKey()) jwtParserBuilder.verifyWith(secretKey);
+        return jwtParserBuilder.build().parseSignedClaims(prefix + val).getPayload();
     }
 
     /**

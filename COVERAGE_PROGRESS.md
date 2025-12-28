@@ -155,65 +155,96 @@
 | DecryptRequestBodyAdvice | `cn.omisheep.authz.core.resolver.DecryptRequestBodyAdvice` | 5% | 待處理 | 請求體解密 |
 | AuHttpMetaResolver | `cn.omisheep.authz.core.resolver.AuHttpMetaResolver` | 10% | 待處理 | HTTP Meta 解析 |
 
-## 新的測試策略 (根據 .clinerules 指示)
+## 新的測試策略 (根據 .clinerules 指示 + 行數優先原則)
 
-### 核心策略：全棧測試優先
-根據 .clinerules 的指示，為了快速提高行覆蓋率，優先使用 `@SpringBootTest` + `@AutoConfigureMockMvc` 來測試從 Controller 層到 Repository 層的完整執行路徑。這種方法可以一次性覆蓋多個類別的行。
+### 核心策略：行數優先 + 全棧測試
+根據 .clinerules 的指示和行數分析結果，重新制定測試優先級。優先處理行數最多的類別，因為覆蓋這些類別可以快速提高整體行覆蓋率。
 
-### 高影響力測試目標
-1. **SupportServlet** (`cn.omisheep.authz.support.http.SupportServlet`)
-   - 現有測試覆蓋率低，只有1個測試方法
-   - 包含大量業務邏輯：IP檢查、使用者認證、資源服務、API處理
-   - 可以通過 `@SpringBootTest` 測試完整的 HTTP 請求處理流程
-   - 預計可以快速提高覆蓋率，因為它會觸發多個依賴類別的執行
+### 行數分析結果 (前10名)
+根據檔案行數統計，行數最多的 Java 類別如下：
+1. **AuHelper.java** (1163 行) - 主要工具類，涵蓋登入、裝置管理、黑名單、OAuth、RSA等功能
+2. **PermissionDict.java** (740 行) - 權限字典管理
+3. **Blacklist.java** (461 行) - 黑名單管理
+4. **ArgsParser.java** (418 行) - 參數解析器 (已有測試)
+5. **UserDevicesDictByCache.java** (384 行) - 使用者裝置快取管理
+6. **Cache.java** (329 行) - 快取介面
+7. **TokenHelper.java** (321 行) - Token 工具 (已完成測試)
+8. **AuthzAutoConfiguration.java** (306 行) - Spring Boot 自動配置
+9. **AuthzProperties.java** (302 行) - 配置屬性類
+10. **AuthzAppVersion.java** (293 行) - 應用版本管理
 
-2. **DefaultOpenAuthLibrary** (`cn.omisheep.authz.core.oauth.DefaultOpenAuthLibrary`)
-   - Service 類別，實現 OpenAuthLibrary 介面
-   - 可以通過 `@SpringBootTest` 測試 OAuth 相關功能
-   - 與 Controller/Interceptor 層有互動
+### 新的測試優先級 (基於行數)
+1. **第一優先級**: AuHelper 測試 (1163 行)
+   - 使用單元測試 + Mockito 靜態方法模擬
+   - 測試登入/登出相關方法
+   - 測試裝置管理相關方法
+   - 測試黑名單操作相關方法
+   - 測試 OAuth 相關方法
+   - 測試 RSA 相關方法
+   - 預計覆蓋 200+ 行代碼
 
-3. **AuthzMethodPermissionChecker** (`cn.omisheep.authz.core.interceptor.AuthzMethodPermissionChecker`)
-   - Interceptor 類別，可以通過 `@SpringBootTest` 測試權限檢查流程
-   - 會觸發多個相關類別的執行
+2. **第二優先級**: PermissionDict 測試 (740 行)
+   - 使用單元測試
+   - 測試權限字典的 CRUD 操作
+   - 測試權限驗證邏輯
+   - 預計覆蓋 150+ 行代碼
 
-### 測試執行優先級
-1. **第一優先級**: SupportServlet 測試擴充
+3. **第三優先級**: Blacklist 測試 (461 行)
+   - 使用單元測試
+   - 測試 IP 黑名單操作
+   - 測試使用者黑名單操作
+   - 測試裝置黑名單操作
+   - 預計覆蓋 100+ 行代碼
+
+4. **第四優先級**: UserDevicesDictByCache 測試 (384 行)
+   - 使用單元測試 + Spring Boot 測試
+   - 測試使用者裝置快取管理
+   - 測試裝置限制邏輯
+   - 預計覆蓋 80+ 行代碼
+
+5. **第五優先級**: SupportServlet 測試擴充 (282 行)
    - 使用 `@SpringBootTest` + `@AutoConfigureMockMvc`
-   - 測試各種 HTTP 請求場景
+   - 測試 HTTP 請求處理流程
    - 測試 IP 檢查邏輯
    - 測試使用者認證流程
-   - 測試 API 處理
-
-2. **第二優先級**: DefaultOpenAuthLibrary 測試
-   - 使用 `@SpringBootTest` 或單元測試
-   - 測試 OAuth 相關方法
-
-3. **第三優先級**: Utils 類別批量測試
-   - HttpUtils, IPUtils, RedisUtils 等
-   - 可以通過單元測試快速提高覆蓋率
+   - 預計覆蓋 50+ 行代碼
 
 ### 預期覆蓋率提升
-- SupportServlet 測試擴充：預計可以覆蓋 50+ 行代碼
-- DefaultOpenAuthLibrary 測試：預計可以覆蓋 30+ 行代碼
-- Utils 類別測試：預計可以覆蓋 40+ 行代碼
-- 總計：預計可以將整體覆蓋率從 18% 提升到 25-30%
+- AuHelper 測試：預計覆蓋 200+ 行代碼
+- PermissionDict 測試：預計覆蓋 150+ 行代碼  
+- Blacklist 測試：預計覆蓋 100+ 行代碼
+- UserDevicesDictByCache 測試：預計覆蓋 80+ 行代碼
+- SupportServlet 測試：預計覆蓋 50+ 行代碼
+- **總計**：預計覆蓋 580+ 行代碼，可將整體覆蓋率從 18% 大幅提升
 
 ### 測試工具配置
-- **主要工具**: `@SpringBootTest` + `@AutoConfigureMockMvc`
-- **模擬工具**: Mockito (用於模擬外部依賴)
+- **主要工具**: 單元測試 (JUnit 5 + Mockito) 為主，整合測試為輔
+- **靜態方法模擬**: 使用 Mockito 的 `mockStatic()` 處理靜態方法
+- **Spring 測試**: 對於需要 Spring 上下文的測試使用 `@SpringBootTest`
 - **斷言工具**: AssertJ (流暢斷言)
 - **覆蓋率工具**: JaCoCo
 
-## 進度追蹤
-- [x] 完成 TokenHelper 測試 (高優先級)
-- [x] 完成 AuthzSlotCoreInterceptor 測試 (高優先級) - 已完成5個測試，全部通過
-- [x] 完成 AuthzContext 測試補充 (高優先級) - 新增4個測試，達到100%覆蓋率
-- [x] 完成 AuthzRSAManager 測試 (高優先級) - 新增14個測試，估計達到85-90%覆蓋率
-- [x] 完成 AuthzManager 測試補充 - 已有13個測試，達到100%覆蓋率
-- [x] 完成 DefaultPermLibrary 測試 (Service類別) - 新增3個測試，達到100%覆蓋率
-- [ ] 擴充 SupportServlet 測試 (使用 @SpringBootTest) - 第一優先級
-- [ ] 完成 DefaultOpenAuthLibrary 測試 (Service類別) - 第二優先級
-- [ ] 完成 Utils 類別測試 (HttpUtils, IPUtils, RedisUtils) - 第三優先級
+## 進度追蹤 (根據新的行數優先策略)
+- [x] 完成 TokenHelper 測試 (321 行)
+- [x] 完成 AuthzSlotCoreInterceptor 測試 (已完成5個測試)
+- [x] 完成 AuthzContext 測試 (100% 覆蓋率)
+- [x] 完成 AuthzRSAManager 測試 (85-90% 覆蓋率)
+- [x] 完成 AuthzManager 測試 (100% 覆蓋率)
+- [x] 完成 DefaultPermLibrary 測試 (100% 覆蓋率)
+
+### 新的行數優先測試計劃
+- [ ] 創建 AuHelper 測試 (1163 行) - 第一優先級
+- [ ] 創建 PermissionDict 測試 (740 行) - 第二優先級
+- [ ] 創建 Blacklist 測試 (461 行) - 第三優先級
+- [ ] 創建 UserDevicesDictByCache 測試 (384 行) - 第四優先級
+- [ ] 擴充 SupportServlet 測試 (282 行) - 第五優先級
+- [ ] 創建 AuthzAutoConfiguration 測試 (306 行) - 第六優先級
+- [ ] 創建 AuthzProperties 測試 (302 行) - 第七優先級
+- [ ] 創建 AuthzAppVersion 測試 (293 行) - 第八優先級
+
+### 其他重要測試
+- [ ] 完成 DefaultOpenAuthLibrary 測試
+- [ ] 完成 Utils 類別測試 (HttpUtils, IPUtils, RedisUtils)
 - [ ] 完成整合測試
 
 ## 更新記錄

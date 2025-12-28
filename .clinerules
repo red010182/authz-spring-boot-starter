@@ -1,34 +1,40 @@
-# Spring Boot Coverage Boost Rules (Hybrid Mode)
+# Spring Boot Coverage Boost Rules (Efficiency & Persistence Mode)
 
-You are an expert Java developer. Goal: Increase LINE COVERAGE to 80% without breaking existing logic.
+You are an expert Java developer. Goal: Increase total project LINE COVERAGE to 80% rapidly while preserving existing tests.
 
-## 1. Mandatory Memory & State Persistence
-- **Primary Source of Truth:** Always read `COVERAGE_PROGRESS.md` first.
-- **Mandatory Update:** Update `COVERAGE_PROGRESS.md` immediately after any test passes.
-- **Context Management:** Summarize status before ending a session to allow 128k context reset.
+## 1. Mandatory Memory & State Persistence (CRITICAL)
+- **Primary Source of Truth:** Always read `COVERAGE_PROGRESS.md` before starting.
+- **Mandatory Update:** Immediately after any test passes, update `COVERAGE_PROGRESS.md` with:
+    - Class Name
+    - Lines of Code (LOC)
+    - Current Line Coverage %
+    - Status (Done/Pending)
+- **Context Management:** Summarize the current state before ending a session to allow 128k context reset.
 
-## 2. Testing Strategy: Preservation + Expansion
-- **Preserve Existing Tests:** - **DO NOT** modify or delete existing Unit Tests (Mockito based) unless they are failing.
-    - If a class already has a `[ClassName]Test.java`, leave it alone.
-- **New Coverage Strategy (The "Full Stack" Hit):**
-    - To fill coverage gaps RAPIDLY, create **NEW** integration tests named `[ClassName]IT.java` or `[ClassName]IntegrationTest.java`.
-    - **Prefer `@SpringBootTest` + `@AutoConfigureMockMvc`** for new tests to cover Controller/Service/Repo layers in one flow.
-- **Metric:** Focus ONLY on maximizing **LINE COVERAGE**. Do not waste tokens on complex branch logic unless required to reach the 80% goal.
-- **Mocks:** Use real beans/H2 for new Integration Tests. Use `@MockBean` only for external APIs (e.g., Cloud services, Payment gateways).
+## 2. Prioritization Strategy: "The Biggest Fish First"
+- **Size Priority:** Always identify and target classes with the **highest Lines of Code (LOC)** that have low coverage. Covering one 500-line class is more valuable than five 20-line classes.
+- **Top-Down Impact:** Focus on Controllers and their associated Services. Integration tests at the Controller level yield the highest LOC coverage per test.
 
-## 3. Technical Standards
-- **Frameworks:** JUnit 5, Mockito, AssertJ, MockMvc.
-- **Environment:** Windows, JDK 17.
-- **Commands:** Use `$env:JAVA_HOME = "C:\Program Files\Java\jdk-17"; E:\maven-mvnd-1.0.3-windows-amd64\bin\mvnd.cmd clean test -Dtest=ClassName`
-- **Clean Code:** No verbose Javadoc. Keep test methods descriptive but concise.
+## 3. Testing Standards: Preservation + Expansion
+- **Preserve Existing Tests:** - **DO NOT** modify or delete existing Mockito-based Unit Tests.
+    - If a class already has a `*Test.java`, leave it.
+- **New Coverage (IT Mode):** - Create **NEW** integration tests named `[ClassName]IT.java`.
+    - Use `@SpringBootTest` + `@AutoConfigureMockMvc` + **H2 Database**.
+    - Aim for the "Happy Path" to trigger as many lines as possible.
+- **Metric:** Focus ONLY on **LINE COVERAGE**. Ignore complex branch logic unless required.
+- **Mocks:** Use `@MockBean` ONLY for external 3rd-party APIs. Use real Beans for internal logic.
 
-## 4. Execution Workflow
-1. **Analyze:** Check `COVERAGE_PROGRESS.md` for classes with < 80% line coverage.
-2. **Read:** Examine the target class AND its existing test file (if any).
-3. **Decision:** - If coverage is low, **CREATE A NEW Integration Test (`IT.java`)** instead of refactoring the existing Unit Test.
-4. **Verify:** Execute the specific test using the provided `mvnd` command.
-5. **Update & Commit:** Update `COVERAGE_PROGRESS.md`, then git commit using DeepSeek to describe the changes.
+## 4. Technical Environment (Windows)
+- **Java Home:** `C:\Program Files\Java\jdk-17`
+- **Maven Command:** `$env:JAVA_HOME = "C:\Program Files\Java\jdk-17"; E:\maven-mvnd-1.0.3-windows-amd64\bin\mvnd.cmd clean test -Dtest=ClassName`
 
-## 5. Handling Edge Cases
-- For new Integration Tests, focus on "Happy Path" first as it covers the most lines.
-- Only address `null` or `Exception` cases if line coverage is still below 80% after happy path tests.
+## 5. Execution Workflow
+1. **Analyze (The LOC Scan):** Scan the project to find the largest classes (by line count) with the lowest coverage.
+2. **Read:** Examine the target class and its existing tests.
+3. **Draft IT:** Create a new `*IT.java` to cover the main execution paths of that large class.
+4. **Verify:** Run the `mvnd` command.
+5. **Report & Commit:** Update `COVERAGE_PROGRESS.md`, then git commit with a summary of the coverage gain.
+
+## 6. Token Optimization
+- Request only the necessary source code (target class + dependency signatures).
+- Once a large class is covered, suggest starting a new chat session to refresh the 128k context.

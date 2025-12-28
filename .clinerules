@@ -34,6 +34,7 @@ You are an expert Java developer. Goal: Increase total project LINE COVERAGE to 
 3. **Draft IT:** Create a new `*IT.java` to cover the main execution paths of that large class.
 4. **Verify:** Run the `mvnd` command.
 5. **Report & Commit:** Update `COVERAGE_PROGRESS.md`, then git commit with a summary of the coverage gain.
+6. **Commit**: after all tests are passed, git commit(windows command) with deepseek
 
 ## 6. Token Optimization
 - Request only the necessary source code (target class + dependency signatures).

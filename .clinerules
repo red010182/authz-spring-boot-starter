@@ -1,40 +1,34 @@
-.clinerules# Spring Boot Test Coverage Expert Rules
+# Spring Boot Coverage Boost Rules (Hybrid Mode)
 
-You are an expert Java developer specializing in increasing test coverage from current (as described in `COVERAGE_PROGRESS.md`) to 80% using JUnit 5, Mockito, and AssertJ.
+You are an expert Java developer. Goal: Increase LINE COVERAGE to 80% without breaking existing logic.
 
-## 1. Progress Management (Memory Persistence)
-- **Primary Source of Truth:** Always refer to `COVERAGE_PROGRESS.md` in the root directory to track which classes are tested.
-- **Update Cycle:** After successfully writing and running tests for a class, you MUST update `COVERAGE_PROGRESS.md` with the latest status and coverage percentage.
-- **Context Saving:** Before finishing a task, summarize the "current state" so I can safely start a new chat session to clear token usage.
+## 1. Mandatory Memory & State Persistence
+- **Primary Source of Truth:** Always read `COVERAGE_PROGRESS.md` first.
+- **Mandatory Update:** Update `COVERAGE_PROGRESS.md` immediately after any test passes.
+- **Context Management:** Summarize status before ending a session to allow 128k context reset.
 
-## 2. Testing Standards
-- **Frameworks:** JUnit 5 (Jupiter), Mockito (for mocking), AssertJ (for fluent assertions).
-- **Naming Convention:** Test classes must be named `[ClassName]Test.java`. Test methods should use descriptive names like `should[ExpectedBehavior]When[Condition]`.
-- **Target:** Aim for 100% Branch Coverage for the target class, not just line coverage.
-- **Isolation:** - Use `@Mock` and `@InjectMocks` for Service layer tests.
-- **Target:** **Maximize LINE COVERAGE rapidly.** Do not spend time on complex branch logic or edge cases; as long as the line is executed, the goal is achieved.
-- **Primary Strategy (The "Full Stack" Hit):** - **ALWAYS prefer `@SpringBootTest`** with `@AutoConfigureMockMvc` to test from the Controller level down to the Repository.
-    - This is the fastest way to cover Controller, Service, and Entity lines in one go.
-- **Top-Down Strategy:** Use `@SpringBootTest` + `@AutoConfigureMockMvc` to hit Controllers and trigger full-stack execution (Service/Repo/Entity).
-- **Metric:** Focus ONLY on maximizing "Line Coverage". If a line is executed, the goal is met.
+## 2. Testing Strategy: Preservation + Expansion
+- **Preserve Existing Tests:** - **DO NOT** modify or delete existing Unit Tests (Mockito based) unless they are failing.
+    - If a class already has a `[ClassName]Test.java`, leave it alone.
+- **New Coverage Strategy (The "Full Stack" Hit):**
+    - To fill coverage gaps RAPIDLY, create **NEW** integration tests named `[ClassName]IT.java` or `[ClassName]IntegrationTest.java`.
+    - **Prefer `@SpringBootTest` + `@AutoConfigureMockMvc`** for new tests to cover Controller/Service/Repo layers in one flow.
+- **Metric:** Focus ONLY on maximizing **LINE COVERAGE**. Do not waste tokens on complex branch logic unless required to reach the 80% goal.
+- **Mocks:** Use real beans/H2 for new Integration Tests. Use `@MockBean` only for external APIs (e.g., Cloud services, Payment gateways).
 
-## 3. Token & Context Optimization
-- **Minimal Dependencies:** When reading a class, only request the source code of the class itself and the public interfaces of its dependencies. Do not read library source code.
-- **Concise Code:** Avoid verbose Javadoc or comments in test files. Code should be self-explanatory.
-- **Chunking:** Work on only 1-3 related classes per conversation session to keep the 128k context clean and focused.
+## 3. Technical Standards
+- **Frameworks:** JUnit 5, Mockito, AssertJ, MockMvc.
+- **Environment:** Windows, JDK 17.
+- **Commands:** Use `$env:JAVA_HOME = "C:\Program Files\Java\jdk-17"; E:\maven-mvnd-1.0.3-windows-amd64\bin\mvnd.cmd clean test -Dtest=ClassName`
+- **Clean Code:** No verbose Javadoc. Keep test methods descriptive but concise.
 
 ## 4. Execution Workflow
-1. **Analyze:** Check `COVERAGE_PROGRESS.md` for the next priority.
-2. **Read:** Use `read_file` to examine the target class and its existing tests (if any).
-3. **Draft:** Write the test code.
-4. **Verify:** Use `execute_command` to run `mvn test -Dtest=ClassNameTest`.
-5. **Report:** If tests pass, update the progress file and notify the user to reset the context.
-6. **Commit** After all tests were passed, git commit with deepseek
+1. **Analyze:** Check `COVERAGE_PROGRESS.md` for classes with < 80% line coverage.
+2. **Read:** Examine the target class AND its existing test file (if any).
+3. **Decision:** - If coverage is low, **CREATE A NEW Integration Test (`IT.java`)** instead of refactoring the existing Unit Test.
+4. **Verify:** Execute the specific test using the provided `mvnd` command.
+5. **Update & Commit:** Update `COVERAGE_PROGRESS.md`, then git commit using DeepSeek to describe the changes.
 
 ## 5. Handling Edge Cases
-- Always test for `null` inputs, `EmptyStack/List`, and `RuntimeException` scenarios.
-- If a method is too complex to test, suggest refactoring (e.g., breaking down large methods) before writing tests.
-
-## 6. Maven and Java envrironment:
-- OS: Windows
-- mvn test command: $env:JAVA_HOME = "C:\Program Files\Java\jdk-17"; E:\maven-mvnd-1.0.3-windows-amd64\bin\mvnd.cmd clean test
+- For new Integration Tests, focus on "Happy Path" first as it covers the most lines.
+- Only address `null` or `Exception` cases if line coverage is still below 80% after happy path tests.

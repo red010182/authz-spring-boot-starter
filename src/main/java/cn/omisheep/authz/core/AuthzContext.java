@@ -52,6 +52,7 @@ public class AuthzContext {
 
     public static void init(ApplicationContext applicationContext) {
         ctx = applicationContext;
+        cn.omisheep.authz.core.helper.BaseHelper.initHelper(applicationContext);
     }
 
     @NonNull

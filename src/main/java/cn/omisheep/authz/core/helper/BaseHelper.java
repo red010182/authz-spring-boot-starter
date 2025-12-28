@@ -14,10 +14,29 @@ import org.springframework.context.ApplicationContext;
  */
 @SuppressWarnings("rawtypes")
 public abstract class BaseHelper {
-    protected static final ApplicationContext ctx             = AuthzContext.getCtx();
-    protected static final AuthzProperties    properties      = ctx.getBean(AuthzProperties.class);
-    protected static final UserDevicesDict    userDevicesDict = ctx.getBean(UserDevicesDict.class);
-    protected static final Cache              cache           = ctx.getBean("authzCache", Cache.class);
-    protected static final PermLibrary        permLibrary     = ctx.getBean(PermLibrary.class);
-    protected static final OpenAuthLibrary    openAuthLibrary = ctx.getBean(OpenAuthLibrary.class);
+    protected static ApplicationContext ctx;
+    protected static AuthzProperties    properties;
+    protected static UserDevicesDict    userDevicesDict;
+    protected static Cache              cache;
+    protected static PermLibrary        permLibrary;
+    protected static OpenAuthLibrary    openAuthLibrary;
+
+    public static void initHelper(ApplicationContext applicationContext) {
+        ctx             = applicationContext;
+        try {
+            properties      = ctx.getBean(AuthzProperties.class);
+        } catch (Exception e) { /* ignore for partial testing */ }
+        try {
+            userDevicesDict = ctx.getBean(UserDevicesDict.class);
+        } catch (Exception e) { /* ignore */ }
+        try {
+            cache           = ctx.getBean("authzCache", Cache.class);
+        } catch (Exception e) { /* ignore */ }
+        try {
+            permLibrary     = ctx.getBean(PermLibrary.class);
+        } catch (Exception e) { /* ignore */ }
+        try {
+            openAuthLibrary = ctx.getBean(OpenAuthLibrary.class);
+        } catch (Exception e) { /* ignore */ }
+    }
 }

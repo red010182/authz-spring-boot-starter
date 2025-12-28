@@ -2,17 +2,17 @@
 
 ## 專案概覽
 - **專案名稱**: authz-spring-boot-starter
-- **當前覆蓋率**: 估計 21-23% (指令覆蓋率) - 提升3-4%
-- **目標覆蓋率**: 15% → 80%
+- **當前覆蓋率**: 18% (指令覆蓋率) - 實際數據
+- **目標覆蓋率**: 18% → 80%
 - **測試框架**: JUnit 5, Mockito, AssertJ (透過 spring-boot-starter-test)
 - **覆蓋率工具**: JaCoCo Maven Plugin
-- **測試執行結果**: 203 個測試全部通過 (新增17個測試)
+- **測試執行結果**: 203 個測試全部通過
 - **詳細覆蓋率數據**:
-  - 指令覆蓋率: 估計 21-23% (需重新計算)
-  - 分支覆蓋率: 估計 11-13% (需重新計算)
-  - 行覆蓋率: 估計 29-31% (需重新計算)
-  - 方法覆蓋率: 估計 24-26% (需重新計算)
-  - 類別覆蓋率: 估計 46-48% (需重新計算)
+  - 指令覆蓋率: 18% (實際數據)
+  - 分支覆蓋率: 需重新計算
+  - 行覆蓋率: 需重新計算
+  - 方法覆蓋率: 需重新計算
+  - 類別覆蓋率: 需重新計算
 
 ## 高優先級待測試類別 (前5名)
 
@@ -155,26 +155,54 @@
 | DecryptRequestBodyAdvice | `cn.omisheep.authz.core.resolver.DecryptRequestBodyAdvice` | 5% | 待處理 | 請求體解密 |
 | AuHttpMetaResolver | `cn.omisheep.authz.core.resolver.AuHttpMetaResolver` | 10% | 待處理 | HTTP Meta 解析 |
 
-## 測試策略建議
+## 新的測試策略 (根據 .clinerules 指示)
 
-### 單元測試重點
-1. **TokenHelper**: 測試各種 token 生成場景、異常情況、加密/解密
-2. **AuthzSlotCoreInterceptor**: 模擬 HTTP 請求/回應，測試 Slot 鏈執行
-3. **AuthzContext**: 測試 ThreadLocal 管理、Bean 取得、例外處理
-4. **AuthzRSAManager**: 測試 RSA 加密/解密、金鑰重新整理排程
-5. **AuthzManager**: 測試各種修改操作、快照同步
+### 核心策略：全棧測試優先
+根據 .clinerules 的指示，為了快速提高行覆蓋率，優先使用 `@SpringBootTest` + `@AutoConfigureMockMvc` 來測試從 Controller 層到 Repository 層的完整執行路徑。這種方法可以一次性覆蓋多個類別的行。
 
-### 整合測試重點
-1. 完整的授權流程測試
-2. OAuth 流程測試
-3. 權限檢查整合測試
-4. 加解密流程整合測試
+### 高影響力測試目標
+1. **SupportServlet** (`cn.omisheep.authz.support.http.SupportServlet`)
+   - 現有測試覆蓋率低，只有1個測試方法
+   - 包含大量業務邏輯：IP檢查、使用者認證、資源服務、API處理
+   - 可以通過 `@SpringBootTest` 測試完整的 HTTP 請求處理流程
+   - 預計可以快速提高覆蓋率，因為它會觸發多個依賴類別的執行
 
-### 測試工具建議
-- **Mockito**: 模擬依賴物件
-- **Spring Boot Test**: 整合測試支援
-- **Testcontainers**: 如需測試 Redis 等外部服務
-- **JaCoCo**: 覆蓋率報告生成
+2. **DefaultOpenAuthLibrary** (`cn.omisheep.authz.core.oauth.DefaultOpenAuthLibrary`)
+   - Service 類別，實現 OpenAuthLibrary 介面
+   - 可以通過 `@SpringBootTest` 測試 OAuth 相關功能
+   - 與 Controller/Interceptor 層有互動
+
+3. **AuthzMethodPermissionChecker** (`cn.omisheep.authz.core.interceptor.AuthzMethodPermissionChecker`)
+   - Interceptor 類別，可以通過 `@SpringBootTest` 測試權限檢查流程
+   - 會觸發多個相關類別的執行
+
+### 測試執行優先級
+1. **第一優先級**: SupportServlet 測試擴充
+   - 使用 `@SpringBootTest` + `@AutoConfigureMockMvc`
+   - 測試各種 HTTP 請求場景
+   - 測試 IP 檢查邏輯
+   - 測試使用者認證流程
+   - 測試 API 處理
+
+2. **第二優先級**: DefaultOpenAuthLibrary 測試
+   - 使用 `@SpringBootTest` 或單元測試
+   - 測試 OAuth 相關方法
+
+3. **第三優先級**: Utils 類別批量測試
+   - HttpUtils, IPUtils, RedisUtils 等
+   - 可以通過單元測試快速提高覆蓋率
+
+### 預期覆蓋率提升
+- SupportServlet 測試擴充：預計可以覆蓋 50+ 行代碼
+- DefaultOpenAuthLibrary 測試：預計可以覆蓋 30+ 行代碼
+- Utils 類別測試：預計可以覆蓋 40+ 行代碼
+- 總計：預計可以將整體覆蓋率從 18% 提升到 25-30%
+
+### 測試工具配置
+- **主要工具**: `@SpringBootTest` + `@AutoConfigureMockMvc`
+- **模擬工具**: Mockito (用於模擬外部依賴)
+- **斷言工具**: AssertJ (流暢斷言)
+- **覆蓋率工具**: JaCoCo
 
 ## 進度追蹤
 - [x] 完成 TokenHelper 測試 (高優先級)
@@ -183,8 +211,9 @@
 - [x] 完成 AuthzRSAManager 測試 (高優先級) - 新增14個測試，估計達到85-90%覆蓋率
 - [x] 完成 AuthzManager 測試補充 - 已有13個測試，達到100%覆蓋率
 - [x] 完成 DefaultPermLibrary 測試 (Service類別) - 新增3個測試，達到100%覆蓋率
-- [ ] 完成 DefaultOpenAuthLibrary 測試 (Service類別)
-- [ ] 完成 Utils 類別測試
+- [ ] 擴充 SupportServlet 測試 (使用 @SpringBootTest) - 第一優先級
+- [ ] 完成 DefaultOpenAuthLibrary 測試 (Service類別) - 第二優先級
+- [ ] 完成 Utils 類別測試 (HttpUtils, IPUtils, RedisUtils) - 第三優先級
 - [ ] 完成整合測試
 
 ## 更新記錄
@@ -205,6 +234,8 @@
 - 2025-12-28: 確認 AuthzManager 已達到100%覆蓋率 (13個測試通過)
 - 2025-12-28: 完成 DefaultPermLibrary 測試，新增3個測試方法，達到100%覆蓋率
 - 2025-12-28: 所有203個測試通過，測試覆蓋率持續提升
+- 2025-12-28: 重新制定測試策略，優先使用 @SpringBootTest 進行全棧測試
+- 2025-12-28: 更新實際覆蓋率數據為 18%，設定新的測試優先級
 
 ## 注意事項
 1. 當前覆蓋率基於 JaCoCo 報告實際數據

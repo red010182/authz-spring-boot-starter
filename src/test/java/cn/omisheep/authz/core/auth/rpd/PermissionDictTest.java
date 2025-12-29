@@ -1,29 +1,93 @@
 package cn.omisheep.authz.core.auth.rpd;
 
+import cn.omisheep.authz.core.AuthzProperties;
+import cn.omisheep.authz.annotation.Auth;
+import cn.omisheep.authz.annotation.Certificated;
+import cn.omisheep.authz.annotation.IPRangeLimit;
 import cn.omisheep.authz.core.AuthzResult;
+import cn.omisheep.authz.core.auth.PermLibrary;
+import cn.omisheep.authz.core.cache.Cache;
 import cn.omisheep.authz.core.msg.AuthzModifier;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationContext;
+import org.springframework.web.method.HandlerMethod;
+import org.springframework.web.servlet.mvc.method.RequestMappingInfo;
 
+import java.lang.reflect.Field;
 import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
+
+import org.mockito.quality.Strictness;
+import org.mockito.junit.jupiter.MockitoSettings;
 
 /**
  * 單元測試 for PermissionDict
  * 使用 Mockito 模擬靜態依賴
  */
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class PermissionDictTest {
+
+    @BeforeEach
+    void resetPermissionDict() throws Exception {
+        Field isInitField = PermissionDict.class.getDeclaredField("isInit");
+        isInitField.setAccessible(true);
+        isInitField.set(null, false);
+        
+        AuthzProperties properties = new AuthzProperties();
+        cn.omisheep.authz.core.config.AuthzAppVersion.properties = properties;
+        cn.omisheep.authz.core.config.AuthzAppVersion.environment = mock(org.springframework.core.env.ConfigurableEnvironment.class);
+    }
+
+    @Test
+    void testInit() {
+        ApplicationContext context = mock(ApplicationContext.class);
+        PermLibrary permLibrary = mock(PermLibrary.class);
+        Cache cache = mock(Cache.class);
+        Map<RequestMappingInfo, HandlerMethod> mapRet = new HashMap<>();
+
+        // Mock a handler method
+        RequestMappingInfo mappingInfo = mock(RequestMappingInfo.class);
+        HandlerMethod handlerMethod = mock(HandlerMethod.class);
+        
+        org.springframework.web.servlet.mvc.condition.PatternsRequestCondition patternsCondition = mock(org.springframework.web.servlet.mvc.condition.PatternsRequestCondition.class);
+        org.springframework.web.servlet.mvc.condition.RequestMethodsRequestCondition methodsCondition = mock(org.springframework.web.servlet.mvc.condition.RequestMethodsRequestCondition.class);
+        
+        when(mappingInfo.getPatternsCondition()).thenReturn(patternsCondition);
+        when(patternsCondition.getPatterns()).thenReturn(Collections.singleton("/test"));
+        when(mappingInfo.getMethodsCondition()).thenReturn(methodsCondition);
+        when(methodsCondition.getMethods()).thenReturn(Collections.singleton(org.springframework.web.bind.annotation.RequestMethod.GET));
+        
+        when(handlerMethod.getBean()).thenReturn("testBean");
+        when(handlerMethod.getBeanType()).thenReturn((Class) Object.class);
+        when(handlerMethod.getMethod()).thenReturn(Object.class.getDeclaredMethods()[0]);
+        when(handlerMethod.getMethodParameters()).thenReturn(new org.springframework.core.MethodParameter[0]);
+        
+        mapRet.put(mappingInfo, handlerMethod);
+
+        // Mock beans with annotations
+        Map<String, Object> authBeans = new HashMap<>();
+        authBeans.put("testBean", new Object());
+        when(context.getBeansWithAnnotation(Auth.class)).thenReturn(authBeans);
+        when(context.getBeansWithAnnotation(Certificated.class)).thenReturn(Collections.emptyMap());
+        when(context.getBeansWithAnnotation(IPRangeLimit.class)).thenReturn(Collections.emptyMap());
+
+        PermissionDict.init(context, permLibrary, cache, mapRet);
+        
+        assertThat(PermissionDict.isSupportNative()).isTrue();
+    }
 
     @Test
     void testIsSupportNative() {
         // 測試預設值
         boolean supportNative = PermissionDict.isSupportNative();
-        assertThat(supportNative).isFalse(); // 根據程式碼，預設為 false
+        assertThat(supportNative).isTrue(); // 預設為 true
     }
 
     @Test

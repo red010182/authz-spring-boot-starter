@@ -57,8 +57,12 @@ public class OpenAuthDict {
         return scope.containsAll(authInfo.scope);
     }
 
+    private static boolean isInit = false;
+
     public static void init(ApplicationContext applicationContext,
                             Map<RequestMappingInfo, HandlerMethod> mapRet) {
+        if (isInit) return;
+        isInit = true;
         HashMap<String, Set<String>>    cMap = new HashMap<>();
         HashMap<String, Set<GrantType>> gMap = new HashMap<>();
         String defaultBasicScope = AuthzAppVersion.properties.getOauth()

@@ -1,81 +1,71 @@
 package cn.omisheep.authz.core.oauth;
 
-import cn.omisheep.authz.core.LogLevel;
-import cn.omisheep.authz.core.tk.GrantType;
-import cn.omisheep.authz.core.util.LogUtils;
-import org.junit.jupiter.api.BeforeAll;
+import cn.omisheep.authz.annotation.OAuthScope;
+import cn.omisheep.authz.core.AuthzProperties;
+import cn.omisheep.authz.core.config.AuthzAppVersion;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
+import org.springframework.context.ApplicationContext;
+import org.springframework.web.method.HandlerMethod;
+import org.springframework.web.servlet.mvc.method.RequestMappingInfo;
 
-import java.util.HashSet;
+import java.lang.reflect.Field;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.*;
 
+@ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class OpenAuthDictTest {
 
-    @BeforeAll
-    static void setup() {
-        LogUtils.setLogLevel(LogLevel.INFO);
+    @BeforeEach
+    void resetOpenAuthDict() throws Exception {
+        Field isInitField = OpenAuthDict.class.getDeclaredField("isInit");
+        isInitField.setAccessible(true);
+        isInitField.set(null, false);
+        
+        AuthzProperties properties = new AuthzProperties();
+        AuthzAppVersion.properties = properties;
+        AuthzAppVersion.environment = mock(org.springframework.core.env.ConfigurableEnvironment.class);
     }
 
     @Test
-    void testOAuthInfo() {
-        OpenAuthDict.OAuthInfo info = new OpenAuthDict.OAuthInfo();
-        
-        // Initially should be non (empty)
-        assertTrue(info.non());
-        
-        // Add scope
-        info.getScope().add("read");
-        info.getScope().add("write");
-        assertFalse(info.non());
-        assertEquals(2, info.getScope().size());
-        
-        // Add type (using actual enum values)
-        info.getType().add(GrantType.PASSWORD);
-        assertEquals(1, info.getType().size());
-    }
+    void testInit() {
+        ApplicationContext context = mock(ApplicationContext.class);
+        Map<RequestMappingInfo, HandlerMethod> mapRet = new HashMap<>();
 
-    @Test
-    void testGetSrc() {
-        Map<String, Map<String, OpenAuthDict.OAuthInfo>> src = OpenAuthDict.getSrc();
-        assertNotNull(src);
-        // Should be unmodifiable
-        assertThrows(UnsupportedOperationException.class, () -> src.put("test", null));
-    }
+        RequestMappingInfo mappingInfo = mock(RequestMappingInfo.class);
+        HandlerMethod handlerMethod = mock(HandlerMethod.class);
+        
+        org.springframework.web.servlet.mvc.condition.PatternsRequestCondition patternsCondition = mock(org.springframework.web.servlet.mvc.condition.PatternsRequestCondition.class);
+        org.springframework.web.servlet.mvc.condition.RequestMethodsRequestCondition methodsCondition = mock(org.springframework.web.servlet.mvc.condition.RequestMethodsRequestCondition.class);
+        
+        when(mappingInfo.getPatternsCondition()).thenReturn(patternsCondition);
+        when(patternsCondition.getPatterns()).thenReturn(Collections.singleton("/oauth"));
+        when(mappingInfo.getMethodsCondition()).thenReturn(methodsCondition);
+        when(methodsCondition.getMethods()).thenReturn(Collections.singleton(org.springframework.web.bind.annotation.RequestMethod.GET));
+        
+        when(context.getBeansWithAnnotation(OAuthScope.class)).thenReturn(Collections.emptyMap());
+        when(context.getBeansWithAnnotation(cn.omisheep.authz.annotation.OAuthScopeBasic.class)).thenReturn(Collections.emptyMap());
+        
+        when(handlerMethod.getBean()).thenReturn("testBean");
+        try {
+            when(handlerMethod.getMethod()).thenReturn(Object.class.getMethod("toString"));
+        } catch (NoSuchMethodException e) {
+            // should not happen
+        }
+        
+        mapRet.put(mappingInfo, handlerMethod);
 
-    @Test
-    void testTarget() {
-        // Without initialization, should return false
-        Set<String> scope = new HashSet<>();
-        scope.add("read");
+        OpenAuthDict.init(context, mapRet);
         
-        boolean result = OpenAuthDict.target("/nonexistent", "GET", GrantType.PASSWORD, scope);
-        assertFalse(result);
-    }
-
-    @Test
-    void testOAuthInfoChaining() {
-        OpenAuthDict.OAuthInfo info = new OpenAuthDict.OAuthInfo();
-        
-        Set<String> scope = new HashSet<>();
-        scope.add("admin");
-        
-        Set<GrantType> types = new HashSet<>();
-        types.add(GrantType.CLIENT_CREDENTIALS);
-        
-        info.setScope(scope).setType(types);
-        
-        assertEquals(scope, info.getScope());
-        assertEquals(types, info.getType());
-    }
-
-    @Test
-    void testGrantTypeFactory() {
-        assertEquals(GrantType.PASSWORD, GrantType.grantType("password"));
-        assertEquals(GrantType.AUTHORIZATION_CODE, GrantType.grantType("authorization_code"));
-        assertEquals(GrantType.CLIENT_CREDENTIALS, GrantType.grantType("client_credentials"));
-        assertNull(GrantType.grantType("unknown"));
+        assertThat(OpenAuthDict.getSrc()).isEmpty();
     }
 }

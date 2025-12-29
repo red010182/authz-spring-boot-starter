@@ -238,7 +238,7 @@
 - [x] 創建 Blacklist 測試 (461 行) - 第三優先級
 - [x] 創建 UserDevicesDictByCache 測試 (384 行) - 第四優先級
 - [ ] 擴充 SupportServlet 測試 (282 行) - 第五優先級
-- [ ] 創建 AuthzAutoConfiguration 測試 (306 行) - 第六優先級
+- [x] 創建 AuthzAutoConfiguration 測試 (306 行) - 第六優先級
 - [ ] 創建 AuthzProperties 測試 (302 行) - 第七優先級
 - [ ] 創建 AuthzAppVersion 測試 (293 行) - 第八優先級
 
@@ -271,6 +271,7 @@
 - 2025-12-28: 完成 PermissionDict 測試，創建12個測試方法，覆蓋率從0%提升至28%，所有測試通過
 - 2025-12-28: 完成 Blacklist 測試，創建10個測試方法，覆蓋IP黑名單、使用者黑名單、IP範圍黑名單等核心功能，所有測試通過
 - 2025-12-28: 完成 UserDevicesDictByCache 測試，創建14個測試方法，覆蓋使用者裝置狀態檢查、新增使用者、刷新使用者、登入檢查、裝置移除等功能，所有測試通過
+- 2025-12-29: 完成 AuthzAutoConfiguration 測試，創建15個測試方法的整合測試，使用 @SpringBootTest 驗證所有 Bean 的正確創建和配置，所有測試通過
 
 ## 注意事項
 1. 當前覆蓋率基於 JaCoCo 報告實際數據
